@@ -1,17 +1,18 @@
 import { useEffect } from "react";
-import { useUserStore } from "./store/user.store";
 import { RouterProvider } from "react-router-dom";
 import { router } from "./router";
+import { useAuth } from "./hooks/useAuth";
 
 function App() {
-  // Get loadUser directly from store - Zustand actions are stable references
-  const loadUser = useUserStore((state) => state.loadUser);
+  const { initAuth, loading } = useAuth();
 
   useEffect(() => {
-    // Load user once on mount - empty deps array ensures this runs only once
-    loadUser();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Empty array - loadUser is stable from Zustand store
+    initAuth();
+  }, [initAuth]);
+
+  if (loading) {
+    return null; // you can replace this with a spinner later
+  }
 
   return <RouterProvider router={router} />;
 }
