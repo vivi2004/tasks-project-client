@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
+import { toast } from "react-hot-toast";
 import googleLogo from "../../assets/logos/google.svg";
 
 const Register = () => {
@@ -18,8 +19,12 @@ const Register = () => {
     try {
       setLoading(true);
       await register(form);
-      navigate("/dashboard");
-    } catch (error) {
+      // Show success message and redirect to login
+      toast.success('Registration successful! Please log in to continue.');
+      navigate("/login");
+    } catch (error: any) {
+      const errorMessage = error?.response?.data?.message || 'Registration failed';
+      toast.error(errorMessage);
       console.error("Registration failed:", error);
     } finally {
       setLoading(false);

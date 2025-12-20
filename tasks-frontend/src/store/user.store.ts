@@ -49,6 +49,9 @@ export const useUserStore = create<AuthState>((set, get) => ({
       return;
     }
 
+    // Set loading state
+    set({ isLoading: true });
+
     // Check if we have a token before making the API call
     const token = localStorage.getItem("accessToken");
     if (!token) {
@@ -68,12 +71,28 @@ export const useUserStore = create<AuthState>((set, get) => ({
     set({ hasAttemptedLoad: true, isLoading: true });
     
     try {
-      const me = await getMeApi();
-      set({
-        user: me,
-        isAuthenticated: true,
-        isLoading: false,
-      });
+      const userData = await getMeApi();
+      if (userData) {
+        // Ensure we have all required user fields with proper fallbacks
+        const user = {
+          ...userData, // Spread all user data first
+          name: userData.name || userData.email?.split('@')[0] || 'User' // Ensure name has a fallback
+        };
+        
+        set({
+          user,
+          isAuthenticated: true,
+          isLoading: false,
+          hasAttemptedLoad: true,
+        });
+      } else {
+        set({
+          user: null,
+          isAuthenticated: false,
+          isLoading: false,
+          hasAttemptedLoad: true,
+        });
+      }
     } catch {
       localStorage.removeItem("accessToken");
       set({

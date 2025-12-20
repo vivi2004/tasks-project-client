@@ -2,11 +2,13 @@ import { useEffect } from "react";
 import { RouterProvider } from "react-router-dom";
 import { router } from "./router";
 import { useUserStore } from "./store/user.store";
+import { AuthProvider } from "./contexts/AuthContext";
 import Loader from "./components/common/Loader";
 
 function App() {
   const loadUser = useUserStore((state) => state.loadUser);
   const isLoading = useUserStore((state) => state.isLoading);
+  const user = useUserStore((state) => state.user);
 
   useEffect(() => {
     // Load user once on mount
@@ -27,7 +29,11 @@ function App() {
     );
   }
 
-  return <RouterProvider router={router} />;
+  return (
+    <AuthProvider user={user}>
+      <RouterProvider router={router} />
+    </AuthProvider>
+  );
 }
 
 export default App;

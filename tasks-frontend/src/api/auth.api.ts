@@ -13,6 +13,10 @@ export const loginApi = async (payload: LoginPayload) => {
     "/auth/login",
     payload
   );
+  // Store refresh token in localStorage
+  if (data.refreshToken) {
+    localStorage.setItem('refreshToken', data.refreshToken);
+  }
   return data;
 };
 
@@ -41,5 +45,10 @@ export const getMeApi = async () => {
  * Logout user (invalidate refresh token on backend)
  */
 export const logoutApi = async () => {
-  await axiosInstance.post("/auth/logout");
+  const refreshToken = localStorage.getItem('refreshToken');
+  if (refreshToken) {
+    await axiosInstance.post("/auth/logout", { refreshToken });
+  }
+  // Clear tokens from localStorage
+  localStorage.removeItem('refreshToken');
 };
