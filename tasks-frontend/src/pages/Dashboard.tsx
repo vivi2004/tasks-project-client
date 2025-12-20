@@ -1,5 +1,5 @@
-import { useAuth } from '../contexts/AuthContext';
 import { ChartBarIcon, ClipboardDocumentListIcon, ClockIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
+import { useAuth } from '../contexts/AuthContext';
 
 const stats = [
   { id: 1, name: 'Total Projects', value: '24', icon: ClipboardDocumentListIcon, change: '+12%', changeType: 'increase' },
@@ -19,7 +19,7 @@ const Dashboard = () => {
   const { user } = useAuth();
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div className="flex-1 overflow-y-auto p-6">
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
         <p className="mt-1 text-sm text-gray-500">
@@ -42,18 +42,21 @@ const Dashboard = () => {
                 <div className="ml-5 w-0 flex-1">
                   <dl>
                     <dt className="text-sm font-medium text-gray-500 truncate">{stat.name}</dt>
-                    <dd className="flex items-baseline">
-                      <div className="text-2xl font-semibold text-gray-900">{stat.value}</div>
-                      <div
-                        className={`ml-2 flex items-baseline text-sm font-semibold ${
-                          stat.changeType === 'increase' ? 'text-green-600' : 'text-red-600'
-                        }`}
-                      >
-                        {stat.change}
-                      </div>
+                    <dd>
+                      <div className="text-lg font-medium text-gray-900">{stat.value}</div>
                     </dd>
                   </dl>
                 </div>
+              </div>
+            </div>
+            <div className="bg-gray-50 px-5 py-3">
+              <div className="text-sm">
+                <span className={`font-medium ${
+                  stat.changeType === 'increase' ? 'text-green-600' : 'text-red-600'
+                }`}>
+                  {stat.change}
+                </span>{' '}
+                <span className="text-gray-500">vs last week</span>
               </div>
             </div>
           </div>
@@ -69,31 +72,28 @@ const Dashboard = () => {
               <p className="mt-1 max-w-2xl text-sm text-gray-500">Latest updates from your projects</p>
             </div>
             <div className="bg-white overflow-hidden">
-              <ul role="list" className="divide-y divide-gray-200">
+              <ul className="divide-y divide-gray-200">
                 {recentActivity.map((activity) => (
-                  <li key={activity.id} className="px-6 py-4 hover:bg-gray-50 transition-colors duration-150">
+                  <li key={activity.id} className="px-6 py-4">
                     <div className="flex items-center">
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-gray-900 truncate">
-                          {activity.project}
-                        </p>
+                      <div className="flex-shrink-0">
+                        <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center">
+                          <span className="text-indigo-600 text-sm font-medium">
+                            {activity.project.charAt(0)}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="ml-4">
+                        <p className="text-sm font-medium text-gray-900">{activity.project}</p>
                         <p className="text-sm text-gray-500">{activity.action}</p>
                       </div>
-                      <div className="ml-4 text-sm text-gray-500">
-                        <time dateTime="2023-01-23">{activity.time}</time>
+                      <div className="ml-auto">
+                        <p className="text-sm text-gray-500">{activity.time}</p>
                       </div>
                     </div>
                   </li>
                 ))}
               </ul>
-            </div>
-            <div className="bg-gray-50 px-4 py-4 sm:px-6 text-right">
-              <a
-                href="#"
-                className="text-sm font-medium text-indigo-600 hover:text-indigo-500"
-              >
-                View all activity
-              </a>
             </div>
           </div>
         </div>

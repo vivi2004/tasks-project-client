@@ -3,6 +3,7 @@ import Home from "../pages/Home";
 import Login from "../features/auth/Login";
 import Register from "../features/auth/Register";
 import Dashboard from "../pages/Dashboard";
+import Profile from "../pages/Profile";
 import ProtectedRoute from "./ProtectedRoute";
 import AppLayout from "../components/layout/AppLayout";
 
@@ -28,6 +29,10 @@ export const router = createBrowserRouter([
           {
             path: "/dashboard",
             element: <Dashboard />,
+          },
+          {
+            path: "/profile",
+            element: <Profile />,
           },
         ],
       },

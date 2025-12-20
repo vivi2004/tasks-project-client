@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { logoutApi } from '../../api/auth.api';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { UserCircleIcon, Cog6ToothIcon, ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline';
 
 const Topbar = () => {
@@ -64,14 +64,15 @@ const Topbar = () => {
                   <p className="text-xs text-gray-500 truncate">{user.email}</p>
                 )}
               </div>
-              <a
-                href="#"
+              <Link
+                to="/profile"
                 className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                 role="menuitem"
+                onClick={() => setIsOpen(false)}
               >
                 <UserCircleIcon className="mr-3 h-5 w-5 text-gray-400" />
                 Profile
-              </a>
+              </Link>
               <a
                 href="#"
                 className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"

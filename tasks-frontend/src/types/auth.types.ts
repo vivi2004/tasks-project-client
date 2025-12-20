@@ -2,6 +2,10 @@ export interface User {
   _id: string;
   email: string;
   name: string;
+  phone?: string;
+  role?: string;
+  createdAt?: string | Date;
+  updatedAt?: string | Date;
 }
 
 export interface AuthResponse {
