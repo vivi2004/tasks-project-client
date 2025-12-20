@@ -1,16 +1,22 @@
 import { Navigate, Outlet } from "react-router-dom";
 import { useUserStore } from "../store/user.store";
-import { useAuth } from "../hooks/useAuth";
+import Loader from "../components/common/Loader";
 
 const ProtectedRoute = () => {
   const user = useUserStore((state) => state.user);
-  const { loading } = useAuth();
+  const isLoading = useUserStore((state) => state.isLoading);
+  const hasAttemptedLoad = useUserStore((state) => state.hasAttemptedLoad);
 
-  // While auth status is being resolved (important for Google OAuth)
-  if (loading) {
+  // While auth status is being resolved
+  if (isLoading || !hasAttemptedLoad) {
     return (
-      <div className="flex h-screen items-center justify-center">
-        <p className="text-sm text-gray-500">Checking authentication...</p>
+      <div className="flex h-screen items-center justify-center bg-gray-50 dark:bg-gray-950">
+        <div className="text-center">
+          <Loader size="lg" />
+          <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">
+            Checking authentication...
+          </p>
+        </div>
       </div>
     );
   }

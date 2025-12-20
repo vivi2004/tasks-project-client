@@ -44,32 +44,28 @@ export const useUserStore = create<AuthState>((set, get) => ({
   loadUser: async () => {
     const state = get();
     
-    // Prevent multiple simultaneous calls - only check hasAttemptedLoad, not isLoading
-    if (state.hasAttemptedLoad) {
+    // Prevent multiple simultaneous calls
+    if (state.hasAttemptedLoad && state.isLoading) {
       return;
     }
-
-    // Mark as attempted immediately to prevent concurrent calls
-    set({ hasAttemptedLoad: true });
 
     // Check if we have a token before making the API call
     const token = localStorage.getItem("accessToken");
     if (!token) {
       set({
         isLoading: false,
+        hasAttemptedLoad: true,
       });
       return;
     }
 
-    // If user already exists, we're done
-    if (state.user) {
-      set({
-        isLoading: false,
-      });
+    // If user already exists and we've attempted load, we're done
+    if (state.user && state.hasAttemptedLoad) {
       return;
     }
 
-    set({ isLoading: true });
+    // Mark as attempted and set loading
+    set({ hasAttemptedLoad: true, isLoading: true });
     
     try {
       const me = await getMeApi();

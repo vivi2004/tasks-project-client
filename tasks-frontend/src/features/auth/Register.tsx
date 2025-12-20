@@ -18,7 +18,7 @@ const Register = () => {
     try {
       setLoading(true);
       await register(form);
-      navigate("/login");
+      navigate("/dashboard");
     } catch (error) {
       console.error("Registration failed:", error);
     } finally {
@@ -108,7 +108,7 @@ const Register = () => {
 
         <p className="text-sm text-slate-600 text-center mt-6">
           Already have an account?{" "}
-          <Link to="/dashboard" className="text-gray-900  hover:underline">
+          <Link to="/login" className="text-gray-900  hover:underline">
             Sign in
           </Link>
         </p>

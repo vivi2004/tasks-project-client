@@ -1,66 +1,57 @@
-import { useCallback, useEffect, useState } from "react";
-import { loginApi, registerApi, getMeApi, logoutApi } from "../api/auth.api";
+import { useCallback, useState } from "react";
+import { loginApi, registerApi, logoutApi } from "../api/auth.api";
 import { useUserStore } from "../store/user.store";
 
 export const useAuth = () => {
   const user = useUserStore((state) => state.user);
-  const setUser = useUserStore((state) => state.setUser);
   const clearUser = useUserStore((state) => state.logout);
+  const loadUser = useUserStore((state) => state.loadUser);
 
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // ✅ Called once on app load (supports Google OAuth)
-  const initAuth = useCallback(async () => {
-    try {
-      setLoading(true);
-      const data = await getMeApi();
-      setUser(data);
-    } catch {
-      clearUser();
-    } finally {
-      setLoading(false);
-    }
-  }, [setUser, clearUser]);
-
-  // ❌ Register should NOT log user in
   const register = useCallback(
     async (payload: any) => {
       try {
-        setLoading(true);
         setError(null);
-        await registerApi(payload);
+        const data = await registerApi(payload);
+        // After registration, store tokens and load user
+        if (data.accessToken) {
+          localStorage.setItem("accessToken", data.accessToken);
+          await loadUser();
+        }
+        return data;
       } catch (err: any) {
         setError(err?.response?.data?.message || "Registration failed");
         throw err;
-      } finally {
-        setLoading(false);
       }
     },
-    []
+    [loadUser]
   );
 
-  // ✅ Login sets cookie, then fetch user
   const login = useCallback(
     async (payload: any) => {
       try {
-        setLoading(true);
         setError(null);
-        await loginApi(payload);
-        await initAuth();
+        const data = await loginApi(payload);
+        // After login, store tokens and load user
+        if (data.accessToken) {
+          localStorage.setItem("accessToken", data.accessToken);
+          await loadUser();
+        }
+        return data;
       } catch (err: any) {
         setError(err?.response?.data?.message || "Login failed");
         throw err;
-      } finally {
-        setLoading(false);
       }
     },
-    [initAuth]
+    [loadUser]
   );
 
   const logout = useCallback(async () => {
     try {
       await logoutApi();
+    } catch {
+      // Ignore logout API errors
     } finally {
       clearUser();
     }
@@ -68,9 +59,7 @@ export const useAuth = () => {
 
   return {
     user,
-    loading,
     error,
-    initAuth,
     login,
     register,
     logout,
