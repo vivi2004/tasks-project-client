@@ -4,6 +4,10 @@ import Login from "../features/auth/Login";
 import Register from "../features/auth/Register";
 import Dashboard from "../pages/Dashboard";
 import Profile from "../pages/Profile";
+import ProjectList from "../components/projects/ProjectList";
+import ProjectDetail from "../components/projects/ProjectDetail";
+import CreateProject from "../components/projects/CreateProject";
+import EditProject from "../components/projects/EditProject";
 import ProtectedRoute from "./ProtectedRoute";
 import AppLayout from "../components/layout/AppLayout";
 
@@ -33,6 +37,22 @@ export const router = createBrowserRouter([
           {
             path: "/profile",
             element: <Profile />,
+          },
+          {
+            path: "/projects",
+            element: <ProjectList />,
+          },
+          {
+            path: "/projects/new",
+            element: <CreateProject />,
+          },
+          {
+            path: "/projects/:id",
+            element: <ProjectDetail />,
+          },
+          {
+            path: "/projects/:id/edit",
+            element: <EditProject />,
           },
         ],
       },

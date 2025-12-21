@@ -5,6 +5,8 @@ import { useUserStore } from "./store/user.store";
 import { AuthProvider } from "./contexts/AuthContext";
 import Loader from "./components/common/Loader";
 
+
+
 function App() {
   const loadUser = useUserStore((state) => state.loadUser);
   const isLoading = useUserStore((state) => state.isLoading);

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ChartBarIcon, ClipboardDocumentListIcon, ClockIcon, CheckCircleIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { useNavigate } from 'react-router-dom';
 import { useUserStore } from '../store/user.store';
 import projectApi from '../api/projectApi';
 import { getErrorMessage } from '../utils/auth';
@@ -47,6 +48,7 @@ const formatRelativeTime = (dateString: string) => {
 };
 
 const Dashboard = () => {
+  const navigate = useNavigate();
   const user = useUserStore((state) => state.user);
   const isAuthenticated = useUserStore((state) => state.isAuthenticated);
   const loadUser = useUserStore((state) => state.loadUser);
@@ -159,10 +161,22 @@ const Dashboard = () => {
   return (
     <div className="flex-1 overflow-y-auto p-6">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-        <p className="mt-1 text-sm text-gray-500">
-          Welcome back, {user?.name || 'User'}! Here's what's happening with your projects today.
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">Dashboard Overview</h1>
+            <p className="mt-1 text-sm text-gray-600">
+              Welcome back, <span className="font-medium text-indigo-600">{user?.name || 'User'}</span>! Here's what's happening with your projects today.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => navigate('/projects/new')}
+            className="hidden sm:inline-flex items-center rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+          >
+            <PlusIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
+            New Project
+          </button>
+        </div>
       </div>
 
       {/* Stats Grid */}
@@ -296,8 +310,7 @@ const Dashboard = () => {
               <button
                 type="button"
                 onClick={() => {
-                  // TODO: Implement new project modal
-                  console.log('New project clicked');
+                  navigate('/projects/new');
                 }}
                 className="w-full flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
               >

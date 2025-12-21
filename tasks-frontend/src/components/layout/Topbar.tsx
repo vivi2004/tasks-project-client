@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { useUserStore } from '../../store/user.store';
 import { logoutApi } from '../../api/auth.api';
-import { useNavigate, Link } from 'react-router-dom';
-import { UserCircleIcon, Cog6ToothIcon, ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
+import { UserCircleIcon, Cog6ToothIcon, ArrowRightOnRectangleIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
 
 const Topbar = () => {
   const user = useUserStore((state) => state.user);
@@ -10,6 +10,7 @@ const Topbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const location = useLocation();
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -37,9 +38,25 @@ const Topbar = () => {
 
   return (
     <header className="h-16 bg-white border-b flex items-center justify-between px-6 shadow-sm">
-      <h1 className="text-lg font-semibold text-gray-800">
-        TaskFlow
-      </h1>
+      <div className="flex items-center gap-3">
+        {location.pathname !== '/dashboard' && (
+          <button
+            type="button"
+            onClick={() => {
+              if (window.history.length > 1) {
+                navigate(-1);
+                return;
+              }
+              navigate('/dashboard');
+            }}
+            className="inline-flex items-center justify-center rounded-md p-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            aria-label="Go back"
+          >
+            <ArrowLeftIcon className="h-5 w-5" aria-hidden="true" />
+          </button>
+        )}
+        <h1 className="text-lg font-semibold text-gray-800">TaskFlow</h1>
+      </div>
 
       <div className="relative" ref={dropdownRef}>
         <button

@@ -1,4 +1,4 @@
-import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse, type InternalAxiosRequestConfig } from 'axios';
+import axios, { type AxiosInstance, type AxiosResponse, type InternalAxiosRequestConfig } from 'axios';
 import { getAuthToken, clearAuth } from '../utils/auth';
 
 // Extend the AxiosRequestConfig to include the _retry property
@@ -47,7 +47,7 @@ interface ErrorResponse {
 api.interceptors.response.use(
   (response: AxiosResponse) => response,
   async (error) => {
-    const originalRequest = error.config;
+    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
     
     // Handle 401 Unauthorized (token expired or invalid)
     if (error.response?.status === 401 && !originalRequest._retry) {
