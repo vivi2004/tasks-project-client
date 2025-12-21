@@ -1,22 +1,151 @@
-import { ChartBarIcon, ClipboardDocumentListIcon, ClockIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
+import { useEffect, useState } from 'react';
+import { ChartBarIcon, ClipboardDocumentListIcon, ClockIcon, CheckCircleIcon, PlusIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '../contexts/AuthContext';
+import projectApi from '../api/projectApi';
+import { getErrorMessage } from '../utils/auth';
 
-const stats = [
-  { id: 1, name: 'Total Projects', value: '24', icon: ClipboardDocumentListIcon, change: '+12%', changeType: 'increase' },
-  { id: 2, name: 'Active Tasks', value: '18', icon: CheckCircleIcon, change: '+2.5%', changeType: 'increase' },
-  { id: 3, name: 'Tasks This Week', value: '32', icon: ClockIcon, change: '+18%', changeType: 'increase' },
-  { id: 4, name: 'Productivity', value: '86%', icon: ChartBarIcon, change: '+4.3%', changeType: 'increase' },
-];
+// Define types for our data
+interface Project {
+  _id: string;
+  name: string;
+  description?: string;
+  tasks?: Array<{
+    _id: string;
+    title: string;
+    status: 'todo' | 'in-progress' | 'completed';
+    dueDate?: string;
+  }>;
+  createdAt: string;
+  updatedAt: string;
+}
 
-const recentActivity = [
-  { id: 1, project: 'Website Redesign', action: 'Task completed', time: '2m ago' },
-  { id: 2, project: 'Mobile App', action: 'New task assigned', time: '1h ago' },
-  { id: 3, project: 'Dashboard UI', action: 'Comment from Sarah', time: '3h ago' },
-  { id: 4, project: 'API Integration', action: 'Task updated', time: '5h ago' },
-];
+interface ProjectStats {
+  totalProjects: number;
+  activeTasks: number;
+  tasksThisWeek: number;
+  completedTasks: number;
+}
+
+interface RecentActivity {
+  _id: string;
+  project: string;
+  action: string;
+  createdAt: string;
+}
+
+// Format date to relative time (e.g., '2m ago')
+const formatRelativeTime = (dateString: string) => {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+  
+  if (diffInSeconds < 60) return 'Just now';
+  if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+  if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+  if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
+  return date.toLocaleDateString();
+};
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [stats, setStats] = useState<ProjectStats>({
+    totalProjects: 0,
+    activeTasks: 0,
+    tasksThisWeek: 0,
+    completedTasks: 0
+  });
+  const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+
+  // Fetch dashboard data
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        setIsLoading(true);
+        
+        // Fetch projects
+        const projectsData: Project[] = await projectApi.getProjects();
+        setProjects(projectsData);
+        
+        // Calculate stats (simplified - in a real app, you might want to get these from the backend)
+        const totalProjects = projectsData.length;
+        const activeTasks = projectsData.reduce(
+          (sum, project) => sum + (project.tasks?.filter(task => task.status !== 'completed').length || 0), 0
+        );
+        const completedTasks = projectsData.reduce(
+          (sum, project) => sum + (project.tasks?.filter(task => task.status === 'completed').length || 0), 0
+        );
+        
+        setStats({
+          totalProjects,
+          activeTasks,
+          tasksThisWeek: projectsData.reduce((sum, project) => {
+            const weekAgo = new Date();
+            weekAgo.setDate(weekAgo.getDate() - 7);
+            return sum + (project.tasks?.filter(task => 
+              task.dueDate && new Date(task.dueDate) > weekAgo
+            ).length || 0);
+          }, 0),
+          completedTasks
+        });
+        
+        // Mock recent activity (replace with actual API call when available)
+        const mockActivity: RecentActivity[] = projectsData.slice(0, 4).map((project: any, index: number) => ({
+          _id: `activity-${index}`,
+          project: project.name,
+          action: ['created', 'updated', 'completed', 'commented on'][index % 4],
+          createdAt: new Date(Date.now() - (index * 3600000)).toISOString()
+        }));
+        
+        setRecentActivity(mockActivity);
+        
+      } catch (err) {
+        setError(getErrorMessage(err));
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchDashboardData();
+  }, []);
+  
+  // Stats configuration
+  const statsConfig = [
+    { 
+      id: 1, 
+      name: 'Total Projects', 
+      value: stats.totalProjects, 
+      icon: ClipboardDocumentListIcon, 
+      change: '+12%', 
+      changeType: 'increase' 
+    },
+    { 
+      id: 2, 
+      name: 'Active Tasks', 
+      value: stats.activeTasks, 
+      icon: CheckCircleIcon, 
+      change: '+2.5%', 
+      changeType: 'increase' 
+    },
+    { 
+      id: 3, 
+      name: 'Tasks This Week', 
+      value: stats.tasksThisWeek, 
+      icon: ClockIcon, 
+      change: '+18%', 
+      changeType: 'increase' 
+    },
+    { 
+      id: 4, 
+      name: 'Completed', 
+      value: stats.completedTasks, 
+      icon: ChartBarIcon, 
+      change: '+4.3%', 
+      changeType: 'increase' 
+    },
+  ];
 
   return (
     <div className="flex-1 overflow-y-auto p-6">
@@ -28,40 +157,68 @@ const Dashboard = () => {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
-        {stats.map((stat) => (
-          <div
-            key={stat.id}
-            className="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow duration-200"
-          >
-            <div className="p-5">
-              <div className="flex items-center">
-                <div className="flex-shrink-0 bg-indigo-100 p-3 rounded-md">
-                  <stat.icon className="h-6 w-6 text-indigo-600" aria-hidden="true" />
-                </div>
-                <div className="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">{stat.name}</dt>
-                    <dd>
-                      <div className="text-lg font-medium text-gray-900">{stat.value}</div>
-                    </dd>
-                  </dl>
+      {isLoading ? (
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="bg-white overflow-hidden shadow rounded-lg">
+              <div className="p-5">
+                <div className="animate-pulse">
+                  <div className="h-4 bg-gray-200 rounded w-1/4 mb-2"></div>
+                  <div className="h-8 bg-gray-200 rounded w-1/2"></div>
                 </div>
               </div>
             </div>
-            <div className="bg-gray-50 px-5 py-3">
-              <div className="text-sm">
-                <span className={`font-medium ${
-                  stat.changeType === 'increase' ? 'text-green-600' : 'text-red-600'
-                }`}>
-                  {stat.change}
-                </span>{' '}
-                <span className="text-gray-500">vs last week</span>
-              </div>
+          ))}
+        </div>
+      ) : error ? (
+        <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-8">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-red-700">{error}</p>
             </div>
           </div>
-        ))}
-      </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+          {statsConfig.map((stat) => (
+            <div
+              key={stat.id}
+              className="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow duration-200"
+            >
+              <div className="p-5">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0 bg-indigo-100 p-3 rounded-md">
+                    <stat.icon className="h-6 w-6 text-indigo-600" aria-hidden="true" />
+                  </div>
+                  <div className="ml-5 w-0 flex-1">
+                    <dl>
+                      <dt className="text-sm font-medium text-gray-500 truncate">{stat.name}</dt>
+                      <dd>
+                        <div className="text-lg font-medium text-gray-900">{stat.value}</div>
+                      </dd>
+                    </dl>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-gray-50 px-5 py-3">
+                <div className="text-sm">
+                  <span className={`font-medium ${
+                    stat.changeType === 'increase' ? 'text-green-600' : 'text-red-600'
+                  }`}>
+                    {stat.change}
+                  </span>{' '}
+                  <span className="text-gray-500">vs last week</span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Recent Activity */}
@@ -73,26 +230,47 @@ const Dashboard = () => {
             </div>
             <div className="bg-white overflow-hidden">
               <ul className="divide-y divide-gray-200">
-                {recentActivity.map((activity) => (
-                  <li key={activity.id} className="px-6 py-4">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0">
-                        <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center">
-                          <span className="text-indigo-600 text-sm font-medium">
-                            {activity.project.charAt(0)}
-                          </span>
+                {isLoading ? (
+                  [1, 2, 3, 4].map((i) => (
+                    <li key={i} className="px-6 py-4">
+                      <div className="animate-pulse flex items-center">
+                        <div className="h-8 w-8 rounded-full bg-gray-200"></div>
+                        <div className="ml-4 space-y-2">
+                          <div className="h-4 bg-gray-200 rounded w-24"></div>
+                          <div className="h-3 bg-gray-200 rounded w-16"></div>
+                        </div>
+                        <div className="ml-auto h-3 bg-gray-200 rounded w-12"></div>
+                      </div>
+                    </li>
+                  ))
+                ) : recentActivity.length > 0 ? (
+                  recentActivity.map((activity) => (
+                    <li key={activity._id} className="px-6 py-4">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0">
+                          <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center">
+                            <span className="text-indigo-600 text-sm font-medium">
+                              {activity.project.charAt(0)}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="ml-4">
+                          <p className="text-sm font-medium text-gray-900">{activity.project}</p>
+                          <p className="text-sm text-gray-500">{activity.action}</p>
+                        </div>
+                        <div className="ml-auto">
+                          <p className="text-sm text-gray-500">
+                            {formatRelativeTime(activity.createdAt)}
+                          </p>
                         </div>
                       </div>
-                      <div className="ml-4">
-                        <p className="text-sm font-medium text-gray-900">{activity.project}</p>
-                        <p className="text-sm text-gray-500">{activity.action}</p>
-                      </div>
-                      <div className="ml-auto">
-                        <p className="text-sm text-gray-500">{activity.time}</p>
-                      </div>
-                    </div>
-                  </li>
-                ))}
+                    </li>
+                  ))
+                ) : (
+                  <div className="px-6 py-4 text-center text-gray-500 text-sm">
+                    No recent activity
+                  </div>
+                )}
               </ul>
             </div>
           </div>
@@ -108,8 +286,13 @@ const Dashboard = () => {
             <div className="p-6 space-y-4">
               <button
                 type="button"
+                onClick={() => {
+                  // TODO: Implement new project modal
+                  console.log('New project clicked');
+                }}
                 className="w-full flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
               >
+                <PlusIcon className="-ml-1 mr-2 h-4 w-4" />
                 New Project
               </button>
               <button
