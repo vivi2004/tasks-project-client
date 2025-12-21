@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { ArrowPathIcon } from '@heroicons/react/24/outline';
 import jobApi from '../api/jobApi';
 
-import type { JobProgressResponse, JobStatus } from '../types/job.types';
+import type { Job, JobProgressResponse, JobStatus } from '../types/job.types';
 
 const statusLabel: Record<JobStatus, string> = {
   queued: 'Queued',
@@ -18,6 +18,7 @@ export default function JobDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<JobProgressResponse | null>(null);
+  const [job, setJob] = useState<Job | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const fetchProgress = async () => {
@@ -34,9 +35,22 @@ export default function JobDetail() {
     }
   };
 
+  const fetchJobDetails = async () => {
+    if (!id) return;
+    try {
+      setError(null);
+      const res = await jobApi.getJob(id);
+      setJob(res);
+    } catch (err: any) {
+      // Keep progress UI usable even if details fail
+      setError((prev) => prev || err?.response?.data?.message || 'Failed to load job details');
+    }
+  };
+
   useEffect(() => {
     setLoading(true);
     fetchProgress();
+    fetchJobDetails();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
@@ -49,6 +63,7 @@ export default function JobDetail() {
 
     const interval = window.setInterval(() => {
       fetchProgress();
+      fetchJobDetails();
     }, 2000);
 
     return () => window.clearInterval(interval);
@@ -116,25 +131,82 @@ export default function JobDetail() {
       ) : !data ? (
         <div className="rounded-lg bg-white p-6 shadow-sm ring-1 ring-gray-200">No data.</div>
       ) : (
-        <div className="rounded-lg bg-white p-6 shadow-sm ring-1 ring-gray-200">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="text-sm font-medium text-gray-900">{progressText}</p>
-              <p className="mt-1 text-xs text-gray-500">Auto-refreshes while processing.</p>
+        <div className="space-y-6">
+          <div className="rounded-lg bg-white p-6 shadow-sm ring-1 ring-gray-200">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-sm font-medium text-gray-900">{progressText}</p>
+                <p className="mt-1 text-xs text-gray-500">Auto-refreshes while processing.</p>
+              </div>
+              <span className="text-xs text-gray-500">Updated just now</span>
             </div>
-            <span className="text-xs text-gray-500">Updated just now</span>
+
+            <div className="mt-4">
+              <div className="h-2 w-full overflow-hidden rounded-full bg-gray-100">
+                <div
+                  className="h-2 rounded-full bg-indigo-600 transition-all"
+                  style={{ width: `${Math.min(100, Math.max(0, data.progress))}%` }}
+                />
+              </div>
+            </div>
           </div>
 
-          <div className="mt-4">
-            <div className="h-2 w-full overflow-hidden rounded-full bg-gray-100">
-              <div
-                className="h-2 rounded-full bg-indigo-600 transition-all"
-                style={{ width: `${Math.min(100, Math.max(0, data.progress))}%` }}
-              />
-            </div>
+          <div className="rounded-lg bg-white p-6 shadow-sm ring-1 ring-gray-200">
+            <h2 className="text-sm font-semibold text-gray-900">Report Output</h2>
+
+            {!job ? (
+              <p className="mt-2 text-sm text-gray-600">Loading report output...</p>
+            ) : job.status === 'failed' ? (
+              <p className="mt-2 text-sm text-red-700">{job.error || 'Job failed.'}</p>
+            ) : job.status !== 'completed' && !job.summary && !job.extractedText ? (
+              <p className="mt-2 text-sm text-gray-600">Report will appear here once the job completes.</p>
+            ) : (
+              <div className="mt-3 space-y-4">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  {job.fileUrl && (
+                    <a
+                      href={job.fileUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
+                    >
+                      View source file
+                    </a>
+                  )}
+                  {job.processedUrl && (
+                    <a
+                      href={job.processedUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
+                    >
+                      View processed output
+                    </a>
+                  )}
+                </div>
+
+                {job.summary && (
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-900">Summary</h3>
+                    <div className="mt-2 whitespace-pre-wrap rounded-md bg-gray-50 px-3 py-2 text-sm text-gray-800">
+                      {job.summary}
+                    </div>
+                  </div>
+                )}
+
+                {job.extractedText && (
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-900">Extracted Text</h3>
+                    <div className="mt-2 max-h-80 overflow-auto whitespace-pre-wrap rounded-md bg-gray-50 px-3 py-2 text-sm text-gray-800">
+                      {job.extractedText}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
-          <div className="mt-6">
+          <div className="rounded-lg bg-white p-6 shadow-sm ring-1 ring-gray-200">
             <h2 className="text-sm font-semibold text-gray-900">Timeline</h2>
             <div className="mt-3 space-y-2">
               {(data.timelineFormatted || []).length === 0 ? (

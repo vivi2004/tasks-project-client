@@ -10,6 +10,8 @@ declare module 'axios' {
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
 
+let refreshPromise: Promise<{ accessToken: string; refreshToken?: string } | null> | null = null;
+
 // Create axios instance with base URL and headers
 const api: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
@@ -54,31 +56,55 @@ api.interceptors.response.use(
       originalRequest._retry = true;
       
       try {
-        // Attempt to refresh the token
-        const response = await axios.post(
-          `${API_BASE_URL}/auth/refresh-token`,
-          {},
-          { 
-            withCredentials: true,
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          }
-        );
-        
-        const { accessToken } = response.data;
-        if (accessToken) {
-          localStorage.setItem('accessToken', accessToken);
-          
-          // Retry the original request with new token
+        const storedRefreshToken = localStorage.getItem('refreshToken');
+        if (!storedRefreshToken) {
+          clearAuth();
+          localStorage.removeItem('refreshToken');
+          window.location.href = '/login';
+          return Promise.reject(error);
+        }
+
+        if (!refreshPromise) {
+          refreshPromise = axios
+            .post(
+              `${API_BASE_URL}/auth/refresh`,
+              { refreshToken: storedRefreshToken },
+              {
+                withCredentials: true,
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+              },
+            )
+            .then((response) => {
+              const { accessToken, refreshToken } = response.data || {};
+              if (accessToken) {
+                localStorage.setItem('accessToken', accessToken);
+              }
+              if (refreshToken) {
+                localStorage.setItem('refreshToken', refreshToken);
+              }
+
+              if (!accessToken) return null;
+              return { accessToken, refreshToken };
+            })
+            .catch(() => null)
+            .finally(() => {
+              refreshPromise = null;
+            });
+        }
+
+        const refreshed = await refreshPromise;
+        if (refreshed?.accessToken) {
           if (originalRequest.headers) {
-            originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+            originalRequest.headers.Authorization = `Bearer ${refreshed.accessToken}`;
           }
           return api(originalRequest);
         }
       } catch (refreshError) {
         // If refresh fails, clear auth and redirect to login
         clearAuth();
+        localStorage.removeItem('refreshToken');
         window.location.href = '/login';
         return Promise.reject(refreshError);
       }

@@ -16,7 +16,6 @@ export default function ProcessFile() {
   const uploadSelectedFile = async (file: File) => {
     const uploadRes = await uploadApi.uploadFile(file);
     setUploadedFileUrl(uploadRes.fileUrl);
-    setFileUrl(uploadRes.fileUrl);
     return uploadRes.fileUrl;
   };
 
@@ -171,9 +170,7 @@ export default function ProcessFile() {
               disabled={isSubmitting}
             />
             {uploadedFileUrl && (
-              <p className="mt-2 text-xs text-green-700">
-                Uploaded successfully. Using URL: <span className="font-mono">{uploadedFileUrl}</span>
-              </p>
+              <p className="mt-2 text-xs text-green-700">File uploaded successfully.</p>
             )}
           </div>
 

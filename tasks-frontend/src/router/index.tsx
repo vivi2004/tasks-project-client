@@ -6,6 +6,7 @@ import Dashboard from "../pages/Dashboard";
 import Jobs from "../pages/Jobs";
 import JobDetail from "../pages/JobDetail";
 import ProcessFile from "../pages/ProcessFile";
+import CreateTask from "../pages/CreateTask";
 import Profile from "../pages/Profile";
 import ProjectList from "../components/projects/ProjectList";
 import ProjectDetail from "../components/projects/ProjectDetail";
@@ -56,6 +57,10 @@ export const router = createBrowserRouter([
           {
             path: "/jobs/:id",
             element: <JobDetail />,
+          },
+          {
+            path: "/tasks/new",
+            element: <CreateTask />,
           },
           {
             path: "/projects/new",

@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { ChartBarIcon, ClipboardDocumentListIcon, ClockIcon, CheckCircleIcon, PlusIcon } from '@heroicons/react/24/outline';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useUserStore } from '../store/user.store';
 import projectApi from '../api/projectApi';
+import taskApi from '../api/taskApi';
 import { getErrorMessage } from '../utils/auth';
 
 // Define types for our data
@@ -10,12 +11,6 @@ interface Project {
   _id: string;
   name: string;
   description?: string;
-  tasks?: Array<{
-    _id: string;
-    title: string;
-    status: 'todo' | 'in-progress' | 'completed';
-    dueDate?: string;
-  }>;
   createdAt: string;
   updatedAt: string;
 }
@@ -49,6 +44,7 @@ const formatRelativeTime = (dateString: string) => {
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const user = useUserStore((state) => state.user);
   const isAuthenticated = useUserStore((state) => state.isAuthenticated);
   const loadUser = useUserStore((state) => state.loadUser);
@@ -79,27 +75,35 @@ const Dashboard = () => {
         // Fetch projects
         const projectsData: Project[] = await projectApi.getProjects();
         setProjects(projectsData);
-        
-        // Calculate stats (simplified - in a real app, you might want to get these from the backend)
+
+        // Calculate task stats from backend tasks endpoint (projects list doesn't include tasks)
         const totalProjects = projectsData.length;
-        const activeTasks = projectsData.reduce(
-          (sum, project) => sum + (project.tasks?.filter(task => task.status !== 'completed').length || 0), 0
+        const weekAgo = new Date();
+        weekAgo.setDate(weekAgo.getDate() - 7);
+
+        const tasksResponses = await Promise.all(
+          projectsData.map((p) =>
+            taskApi
+              .getTasks(p._id, { page: 1, limit: 1000 })
+              .then((res) => res.data)
+              .catch(() => []),
+          ),
         );
-        const completedTasks = projectsData.reduce(
-          (sum, project) => sum + (project.tasks?.filter(task => task.status === 'completed').length || 0), 0
-        );
-        
+
+        const allTasks = tasksResponses.flat();
+
+        const activeTasks = allTasks.filter((t: any) => t.status !== 'done').length;
+        const completedTasks = allTasks.filter((t: any) => t.status === 'done').length;
+        const tasksThisWeek = allTasks.filter((t: any) => {
+          if (!t.dueDate) return false;
+          return new Date(t.dueDate) > weekAgo;
+        }).length;
+
         setStats({
           totalProjects,
           activeTasks,
-          tasksThisWeek: projectsData.reduce((sum, project) => {
-            const weekAgo = new Date();
-            weekAgo.setDate(weekAgo.getDate() - 7);
-            return sum + (project.tasks?.filter(task => 
-              task.dueDate && new Date(task.dueDate) > weekAgo
-            ).length || 0);
-          }, 0),
-          completedTasks
+          tasksThisWeek,
+          completedTasks,
         });
         
         // Mock recent activity (replace with actual API call when available)
@@ -120,7 +124,7 @@ const Dashboard = () => {
     };
     
     fetchDashboardData();
-  }, []);
+  }, [location.key]);
   
   // Stats configuration
   const statsConfig = [
@@ -319,12 +323,18 @@ const Dashboard = () => {
               </button>
               <button
                 type="button"
+                onClick={() => {
+                  navigate('/tasks/new');
+                }}
                 className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
               >
                 Create Task
               </button>
               <button
                 type="button"
+                onClick={() => {
+                  navigate('/jobs/process');
+                }}
                 className="w-full flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
               >
                 Generate Report

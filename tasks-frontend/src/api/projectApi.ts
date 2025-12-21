@@ -33,7 +33,7 @@ export const projectApi = {
 
   // Update an existing project
   updateProject: async (id: string, data: Partial<ProjectInput>): Promise<ApiProject> => {
-    const response = await api.patch(`/projects/${id}`, data);
+    const response = await api.put(`/projects/${id}`, data);
     return response.data;
   },
 
