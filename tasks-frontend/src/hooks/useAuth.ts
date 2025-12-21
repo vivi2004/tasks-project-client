@@ -6,6 +6,7 @@ export const useAuth = () => {
   const user = useUserStore((state) => state.user);
   const clearUser = useUserStore((state) => state.logout);
   const loadUser = useUserStore((state) => state.loadUser);
+  const setUser = useUserStore((state) => state.setUser);
 
   const [error, setError] = useState<string | null>(null);
 
@@ -14,10 +15,21 @@ export const useAuth = () => {
       try {
         setError(null);
         const data = await registerApi(payload);
-        // After registration, store tokens and load user
         if (data.accessToken) {
           localStorage.setItem("accessToken", data.accessToken);
-          await loadUser();
+          if (data.refreshToken) {
+            localStorage.setItem("refreshToken", data.refreshToken);
+          }
+          // If user data is included in the response, update the store
+          if (data.user) {
+            setUser({
+              ...data.user,
+              name: data.user.name || data.user.email?.split('@')[0] || 'User'
+            });
+          } else {
+            // Fallback to loading user data
+            await loadUser();
+          }
         }
         return data;
       } catch (err: any) {
@@ -25,7 +37,7 @@ export const useAuth = () => {
         throw err;
       }
     },
-    [loadUser]
+    [loadUser, setUser]
   );
 
   const login = useCallback(
@@ -33,10 +45,21 @@ export const useAuth = () => {
       try {
         setError(null);
         const data = await loginApi(payload);
-        // After login, store tokens and load user
         if (data.accessToken) {
           localStorage.setItem("accessToken", data.accessToken);
-          await loadUser();
+          if (data.refreshToken) {
+            localStorage.setItem("refreshToken", data.refreshToken);
+          }
+          // If user data is included in the response, update the store
+          if (data.user) {
+            setUser({
+              ...data.user,
+              name: data.user.name || data.user.email?.split('@')[0] || 'User'
+            });
+          } else {
+            // Fallback to loading user data
+            await loadUser();
+          }
         }
         return data;
       } catch (err: any) {
@@ -44,7 +67,7 @@ export const useAuth = () => {
         throw err;
       }
     },
-    [loadUser]
+    [loadUser, setUser]
   );
 
   const logout = useCallback(async () => {

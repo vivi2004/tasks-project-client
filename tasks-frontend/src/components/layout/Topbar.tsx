@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
+import { useUserStore } from '../../store/user.store';
 import { logoutApi } from '../../api/auth.api';
 import { useNavigate, Link } from 'react-router-dom';
 import { UserCircleIcon, Cog6ToothIcon, ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline';
 
 const Topbar = () => {
-  const { user, logout } = useAuth();
+  const user = useUserStore((state) => state.user);
+  const logout = useUserStore((state) => state.logout);
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();

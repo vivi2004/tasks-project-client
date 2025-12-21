@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ChartBarIcon, ClipboardDocumentListIcon, ClockIcon, CheckCircleIcon, PlusIcon } from '@heroicons/react/24/outline';
-import { useAuth } from '../contexts/AuthContext';
+import { useUserStore } from '../store/user.store';
 import projectApi from '../api/projectApi';
 import { getErrorMessage } from '../utils/auth';
 
@@ -47,7 +47,9 @@ const formatRelativeTime = (dateString: string) => {
 };
 
 const Dashboard = () => {
-  const { user } = useAuth();
+  const user = useUserStore((state) => state.user);
+  const isAuthenticated = useUserStore((state) => state.isAuthenticated);
+  const loadUser = useUserStore((state) => state.loadUser);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState<ProjectStats>({
@@ -58,6 +60,13 @@ const Dashboard = () => {
   });
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
+
+  // Load user data if not already loaded
+  useEffect(() => {
+    if (isAuthenticated && !user) {
+      loadUser();
+    }
+  }, [isAuthenticated, user, loadUser]);
 
   // Fetch dashboard data
   useEffect(() => {

@@ -6,7 +6,7 @@ interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  hasAttemptedLoad: boolean; // Track if we've attempted to load user at least once
+  hasAttemptedLoad: boolean;
   setUser: (user: User) => void;
   setLoading: (loading: boolean) => void;
   logout: () => void;
@@ -19,25 +19,27 @@ export const useUserStore = create<AuthState>((set, get) => ({
   isLoading: true,
   hasAttemptedLoad: false,
 
-  setUser: (user) =>
+  setUser: (user) => {
     set({
       user,
-      isAuthenticated: true,
+      isAuthenticated: !!user,
       isLoading: false,
-    }),
+      hasAttemptedLoad: true,
+    });
+  },
 
-  setLoading: (loading) =>
-    set({
-      isLoading: loading,
-    }),
+  setLoading: (loading) => {
+    set({ isLoading: loading });
+  },
 
   logout: () => {
     localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
     set({
       user: null,
       isAuthenticated: false,
       isLoading: false,
-      hasAttemptedLoad: false, // Reset so we can load again after logout
+      hasAttemptedLoad: false,
     });
   },
 
@@ -45,55 +47,40 @@ export const useUserStore = create<AuthState>((set, get) => ({
     const state = get();
     
     // Prevent multiple simultaneous calls
-    if (state.hasAttemptedLoad && state.isLoading) {
+    if (state.isLoading && state.hasAttemptedLoad) {
       return;
     }
 
-    // Set loading state
-    set({ isLoading: true });
+    set({ isLoading: true, hasAttemptedLoad: true });
 
-    // Check if we have a token before making the API call
-    const token = localStorage.getItem("accessToken");
-    if (!token) {
-      set({
-        isLoading: false,
-        hasAttemptedLoad: true,
-      });
-      return;
-    }
-
-    // If user already exists and we've attempted load, we're done
-    if (state.user && state.hasAttemptedLoad) {
-      return;
-    }
-
-    // Mark as attempted and set loading
-    set({ hasAttemptedLoad: true, isLoading: true });
-    
     try {
+      const token = localStorage.getItem("accessToken");
+      if (!token) {
+        set({ isLoading: false, isAuthenticated: false, user: null });
+        return;
+      }
+
       const userData = await getMeApi();
       if (userData) {
-        // Ensure we have all required user fields with proper fallbacks
-        const user = {
-          ...userData, // Spread all user data first
-          name: userData.name || userData.email?.split('@')[0] || 'User' // Ensure name has a fallback
-        };
-        
         set({
-          user,
+          user: {
+            ...userData,
+            name: userData.name || userData.email?.split('@')[0] || 'User'
+          },
           isAuthenticated: true,
           isLoading: false,
-          hasAttemptedLoad: true,
         });
       } else {
+        // If no user data but we have a token, clear the invalid token
+        localStorage.removeItem("accessToken");
         set({
           user: null,
           isAuthenticated: false,
           isLoading: false,
-          hasAttemptedLoad: true,
         });
       }
-    } catch {
+    } catch (error) {
+      console.error("Failed to load user:", error);
       localStorage.removeItem("accessToken");
       set({
         user: null,
