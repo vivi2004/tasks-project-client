@@ -3,6 +3,7 @@ import { RouterProvider } from "react-router-dom";
 import { router } from "./router";
 import { useUserStore } from "./store/user.store";
 import { AuthProvider } from "./contexts/AuthContext";
+import { ThemeProvider } from "./contexts/ThemeContext";
 import Loader from "./components/common/Loader";
 
 
@@ -32,9 +33,11 @@ function App() {
   }
 
   return (
-    <AuthProvider user={user}>
-      <RouterProvider router={router} />
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider user={user}>
+        <RouterProvider router={router} />
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 
