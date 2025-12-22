@@ -95,7 +95,7 @@ export default function JobDetail() {
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Job Progress</h1>
-          <p className="mt-1 text-sm text-gray-600">Job ID: <span className="font-mono">{id}</span></p>
+          <p className="mt-1 text-sm text-gray-600">Track your file processing progress</p>
         </div>
 
         <div className="flex gap-3">
