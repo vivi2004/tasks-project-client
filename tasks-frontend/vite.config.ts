@@ -9,7 +9,7 @@ export default defineConfig({
   ],
   server: {
     host: true,
-       allowedHosts: ['https://tasks-project-api.onrender.com'],
+       allowedHosts: ['tasks-project-client-n78i.onrender.com'],
     proxy: {
       '/api': {
         target: 'http://localhost:4000',
